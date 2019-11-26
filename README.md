@@ -1,23 +1,3 @@
-# Frustum ConvNet: Sliding Frustums to Aggregate Local Point-Wise Features for Amodal 3D Object Detection
-
-This repository is the code for our IROS 2019 paper [[arXiv]](https://arxiv.org/abs/1903.01864).  
-
-## Citation
-
-If you find this work useful in your research, please consider citing.
-
-```BibTeX
-@inproceedings{wang2019frustum,
-    title={Frustum ConvNet: Sliding Frustums to Aggregate Local Point-Wise Features for Amodal 3D Object Detection},
-    author={Wang, Zhixin and Jia, Kui},
-    booktitle={IROS},
-    year={2019},
-    organization={IEEE}
-}
-```
-
-## Installation
-
 ### Requirements  
 
 * PyTorch 1.0+  
@@ -26,10 +6,6 @@ If you find this work useful in your research, please consider citing.
 We test our code under Ubuntu-16.04 with CUDA-9.0, CUDNN-7.0, Python-3.7.2, PyTorch-1.0.  
 
 ### Clone the repository and install dependencies
-
-```shell
-git clone https://github.com/zhixinwang/frustum-convnet.git
-```
 
 You may need to install extra packages, like pybind11, opencv, yaml, tensorflow(optional).
 
@@ -136,7 +112,7 @@ Our code is supported multiple GPUs for training, but now the training is very f
 
 ## Acknowledgements
 
-Part of the code was adapted from [F-PointNets](https://github.com/charlesq34/frustum-pointnets).
+Part of the code was adapted from [zhixinwang/frustum-convnet](https://github.com/zhixinwang/frustum-convnet).
 
 ## License
 
