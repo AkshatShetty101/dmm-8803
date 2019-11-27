@@ -601,7 +601,7 @@ class PointNetDet(nn.Module):
         super(PointNetDet, self).__init__()
 
         # self.feat_net = PointNetFeat(input_channel, 0)
-        self.feat_net = RandPointCNN(C_in=input_channel, C_out=1, dims=, K=8, D=3, P=1, r_indices_func=, sampling_method="rand")
+        self.feat_net = RandPointCNN(C_in=input_channel, C_out=1, dims=input_channel, K=8, D=3, P=1, r_indices_func=, sampling_method="rand")
         self.conv_net = ConvFeatNet()
 
         self.num_classes = num_classes
