@@ -30,7 +30,8 @@ from util_funcs import knn_indices_func_gpu, knn_indices_func_cpu, UFloatTensor,
 from model_util import Conv, SepConv, Dense, EndChannels
 from typing import Tuple, Callable, Optional
 import matplotlib.pyplot as plt
-
+from itertools import product, groupby
+from torch import FloatTensor
 
 
 NUM_SIZE_CLUSTER = len(KITTICategory.CLASSES)
