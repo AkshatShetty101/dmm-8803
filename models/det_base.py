@@ -26,6 +26,10 @@ from ops.query_depth_point.query_depth_point import QueryDepthPoint
 from ops.pybind11.box_ops_cc import rbbox_iou_3d_pair
 from models.box_transform import size_decode, size_encode, center_decode, center_encode, angle_decode, angle_encode
 
+from util_funcs import knn_indices_func_gpu, knn_indices_func_cpu, UFloatTensor, ULongTensor
+from model_util import Conv, SepConv, Dense, EndChannels
+
+
 
 NUM_SIZE_CLUSTER = len(KITTICategory.CLASSES)
 MEAN_SIZE_ARRAY = KITTICategory.MEAN_SIZE_ARRAY
@@ -601,7 +605,7 @@ class PointNetDet(nn.Module):
         super(PointNetDet, self).__init__()
 
         # self.feat_net = PointNetFeat(input_channel, 0)
-        self.feat_net = RandPointCNN(C_in=input_channel, C_out=1, dims=input_channel, K=8, D=3, P=1, r_indices_func=, sampling_method="rand")
+        self.feat_net = RandPointCNN(C_in=input_channel, C_out=1, dims=input_channel, K=8, D=3, P=1, r_indices_func=knn_indices_func_gpu, sampling_method="rand")
         self.conv_net = ConvFeatNet()
 
         self.num_classes = num_classes
