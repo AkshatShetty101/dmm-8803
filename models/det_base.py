@@ -135,8 +135,8 @@ class PointNetFeat(nn.Module):
         pc2 = sample_pc[1]
         pc3 = sample_pc[2]
         pc4 = sample_pc[3]
-        pc4 = sample_pc[4]
-        pc5 = sample_pc[5]
+        pc5 = sample_pc[4]
+        pc6 = sample_pc[5]
 
         feat1 = self.pointnet1(pc, feat, pc1)
         feat1, _ = torch.max(feat1, -1)
