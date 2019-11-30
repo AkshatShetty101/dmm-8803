@@ -54,6 +54,8 @@ class XConv(nn.Module):
         super(XConv, self).__init__()
 
         self.P = P
+        self.K = K
+        self.dims = dims
 
         # Additional processing layers
         # self.pts_layernorm = LayerNorm(2, momentum = 0.9)
@@ -63,6 +65,7 @@ class XConv(nn.Module):
         self.dense2 = Dense(C_mid, C_mid)
 
         # Layers to generate X
+        # print("in_channels", dims, "out_channels", K*K, "C_in", C_in)
         self.x_trans = nn.Sequential(
             EndChannels(Conv(
                 in_channels = dims,
@@ -75,7 +78,9 @@ class XConv(nn.Module):
         )
 
         self.end_conv = EndChannels(SepConv(
-            in_channels = C_mid + C_in,
+            # XXX
+            # in_channels = C_mid + C_in,
+            in_channels = C_mid,
             out_channels = C_out,
             kernel_size = (1, K),
             depth_multiplier = depth_multiplier
@@ -96,7 +101,6 @@ class XConv(nn.Module):
         :return: Features aggregated into point rep_pt.
         """
         rep_pt, pts, fts = x
-
         if fts is not None:
             assert(rep_pt.size()[0] == pts.size()[0] == fts.size()[0])  # Check N is equal.
             assert(rep_pt.size()[1] == pts.size()[1] == fts.size()[1])  # Check P is equal.
@@ -115,6 +119,7 @@ class XConv(nn.Module):
         # Move pts to local coordinate system of rep_pt.
         # t0 = time.time()
         pts_local = pts - p_center  # (N, P, K, dims)
+        # print("pts_local", pts_local.shape)
         # print("localizing", time.time() - t0)
         # pts_local = self.pts_layernorm(pts - p_center)
 
@@ -178,7 +183,6 @@ class PointCNN(nn.Module):
 
         C_mid = C_out // 2 if C_in == 0 else C_out // 4
         depth_multiplier = min(int(np.ceil(C_out / C_in)), 4)
-
         self.r_indices_func = lambda rep_pts, pts: r_indices_func(rep_pts, pts, K, D)
         self.dense = Dense(C_in, C_out // 2) if C_in != 0 else None
         self.x_conv = XConv(C_out // 2 if C_in != 0 else C_in, C_out, dims, K, P, C_mid, depth_multiplier)
@@ -244,7 +248,6 @@ class PointCNN(nn.Module):
                 rep_pts = pts
         else:
             rep_pts, pts, fts = x
-
         fts = self.dense(fts) if fts is not None else fts
 
         # This step takes ~97% of the time. Prime target for optimization: KNN on GPU.
@@ -410,6 +413,43 @@ class RandPointCNN(nn.Module):
         batch_pts = list(map(fps, [(pts,K) for pts in batch_pts]))
         return torch.stack(batch_pts, dim = 0).long().cuda()
 
+class PCNNModule(nn.Module):
+    def __init__(self):
+        super(PCNNModule, self).__init__()
+        self.pointnet1 = RandPointCNN(C_in=1, C_out=128, dims=3, K=8, D=2, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
+        self.pointnet2 = RandPointCNN(C_in=1, C_out=128, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
+        self.pointnet3 = RandPointCNN(C_in=1, C_out=256, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
+        self.pointnet4 = RandPointCNN(C_in=1, C_out=512, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
+
+    def forward(self, point_cloud, sample_pc, feat=None, one_hot_vec=None):
+        pc = point_cloud
+        pc1 = sample_pc[0].permute(0, 2, 1)
+        pc2 = sample_pc[1].permute(0, 2, 1)
+        pc3 = sample_pc[2].permute(0, 2, 1)
+        pc4 = sample_pc[3].permute(0, 2, 1)
+        if feat is not None:
+            print("I am getting feat, kill me")
+            print("Feat", feat.shape)
+
+        feat1 = self.pointnet1((pc1, None))[1].permute(0, 2, 1)
+        feat2 = self.pointnet2((pc2, None))[1].permute(0, 2, 1)
+        feat3 = self.pointnet3((pc3, None))[1].permute(0, 2, 1)
+        feat4 = self.pointnet4((pc4, None))[1].permute(0, 2, 1)
+
+        if one_hot_vec is not None:
+            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat1.shape[-1])
+            feat1 = torch.cat([feat1, one_hot], 1)
+
+            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat2.shape[-1])
+            feat2 = torch.cat([feat2, one_hot], 1)
+
+            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat3.shape[-1])
+            feat3 = torch.cat([feat3, one_hot], 1)
+
+            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat4.shape[-1])
+            feat4 = torch.cat([feat4, one_hot], 1)
+
+        return feat1, feat2, feat3, feat4
 # single scale PointNet module
 class PointNetModule(nn.Module):
     def __init__(self, Infea, mlp, dist, nsample, use_xyz=True, use_feature=True):
@@ -480,8 +520,7 @@ class PointNetModule(nn.Module):
         grouped_feature = grouped_feature * valid.float()
 
         return grouped_feature
-
-
+    
 # multi-scale PointNet module
 class PointNetFeat(nn.Module):
     def __init__(self, input_channel=3, num_vec=0):
@@ -608,7 +647,7 @@ class PointNetDet(nn.Module):
         super(PointNetDet, self).__init__()
 
         # self.feat_net = PointNetFeat(input_channel, 0)
-        self.feat_net = RandPointCNN(C_in=input_channel, C_out=1, dims=input_channel, K=8, D=3, P=1, r_indices_func=knn_indices_func_gpu, sampling_method="rand")
+        self.feat_net = PCNNModule()
         self.conv_net = ConvFeatNet()
 
         self.num_classes = num_classes
@@ -726,11 +765,39 @@ class PointNetDet(nn.Module):
 
         mean_size_array = torch.from_numpy(MEAN_SIZE_ARRAY).type_as(point_cloud)
 
+        # print("Point cloud")
+        # print(point_cloud.shape)
+        # print("one_hot_vec")
+        # print(one_hot_vec.shape)
+        # print("cls_label")
+        # print(cls_label.shape)
+        # print("size_class_label")
+        # print(size_class_label.shape)
+        # print("center_label")
+        # print(center_label.shape)
+        # print("heading_label")
+        # print(heading_label.shape)
+        # print("size_label")
+        # print(size_label.shape)
+        # print("center_ref1")
+        # print(center_ref1.shape)
+        # print("center_ref2")
+        # print(center_ref2.shape)
+        # print("center_ref3")
+        # print(center_ref3.shape)
+        # print("center_ref4")
+        # print(center_ref4.shape)
+        # print("Class labels")
+        # torch.set_printoptions(profile="full")
+        # torch.set_printoptions(profile="default")
+        
+        # print(center_ref1.shape, center_ref2.shape, center_ref3.shape)
         feat1, feat2, feat3, feat4 = self.feat_net(
             object_point_cloud_xyz,
             [center_ref1, center_ref2, center_ref3, center_ref4],
             object_point_cloud_i,
             one_hot_vec)
+        # print(feat1.shape, feat2.shape, feat3.shape)
 
         x = self.conv_net(feat1, feat2, feat3, feat4)
 
