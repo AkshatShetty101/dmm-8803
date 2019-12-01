@@ -619,7 +619,7 @@ if __name__ == '__main__':
     np.random.seed(3)
 
     if args.save_dir is None:
-        save_dir = 'kitti/data/pickle_data'
+        save_dir = 'kitti/data/pickle_data_101'
     else:
         save_dir = args.save_dir
 
@@ -656,7 +656,7 @@ if __name__ == '__main__':
 
     if args.gen_val_rgb_detection:
         extract_frustum_data_rgb_detection(
-            os.path.join(BASE_DIR, 'rgb_detections/rgb_detection_val.txt'),
+            os.path.join(BASE_DIR, 'rgb_detections_1/rgb_detection_val.txt'),
             'training',
             os.path.join(save_dir, output_prefix + 'val_rgb_detection.pickle'),
             type_whitelist=type_whitelist)

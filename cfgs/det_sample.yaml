@@ -20,7 +20,7 @@ TEST:
   
 DATA:
   FILE: datasets/provider_sample.py
-  DATA_ROOT: kitti/data/pickle_data
+  DATA_ROOT: kitti/data/pickle_data_101
   CAR_ONLY: True
   RTC: True
   WITH_EXTRA_FEAT: False
