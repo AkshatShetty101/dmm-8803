@@ -294,11 +294,11 @@ class XConv(nn.Module):
     def forward(self, nn_pts_local, nn_fts_input):
         """
         pts: nn_pts_local (N, 3, P, K)
-        nn_fts_input : (N, C, P, K) 
+        nn_fts_input : (N, C, P, K)
 
         """
-        N, C0, P, K = nn_pts_local.shape
-        assert C0 == 3
+        # N, C0, P, K = nn_pts_local.shape
+        # assert C0 == 3
 
         if self.with_X_transformation:
 

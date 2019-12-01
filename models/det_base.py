@@ -19,7 +19,7 @@ from datasets.dataset_info import KITTICategory
 from models.model_util import get_box3d_corners_helper
 from models.model_util import huber_loss
 
-from models.common import Conv1d, Conv2d, DeConv1d, init_params
+from models.common import Conv1d, Conv2d, DeConv1d, init_params, XConv
 from models.common import softmax_focal_loss_ignore, get_accuracy
 
 from ops.query_depth_point.query_depth_point import QueryDepthPoint
@@ -36,7 +36,7 @@ from torch import FloatTensor
 
 NUM_SIZE_CLUSTER = len(KITTICategory.CLASSES)
 MEAN_SIZE_ARRAY = KITTICategory.MEAN_SIZE_ARRAY
-
+'''
 class XConv(nn.Module):
     """ Convolution over a single point and its neighbors.  """
 
@@ -416,10 +416,10 @@ class RandPointCNN(nn.Module):
 class PCNNModule(nn.Module):
     def __init__(self):
         super(PCNNModule, self).__init__()
-        self.pointnet1 = RandPointCNN(C_in=1, C_out=128, dims=3, K=8, D=2, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
-        self.pointnet2 = RandPointCNN(C_in=1, C_out=128, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
-        self.pointnet3 = RandPointCNN(C_in=1, C_out=256, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
-        self.pointnet4 = RandPointCNN(C_in=1, C_out=512, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fps")
+        self.pointnet1 = PointCNN(C_in=1, C_out=128, dims=3, K=8, D=2, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fast_fps")
+        self.pointnet2 = PointCNN(C_in=1, C_out=128, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fast_fps")
+        self.pointnet3 = PointCNN(C_in=1, C_out=256, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fast_fps")
+        self.pointnet4 = PointCNN(C_in=1, C_out=512, dims=3, K=8, D=4, P=-1, r_indices_func=knn_indices_func_gpu, sampling_method="fast_fps")
 
     def forward(self, point_cloud, sample_pc, feat=None, one_hot_vec=None):
         pc = point_cloud
@@ -427,10 +427,7 @@ class PCNNModule(nn.Module):
         pc2 = sample_pc[1].permute(0, 2, 1)
         pc3 = sample_pc[2].permute(0, 2, 1)
         pc4 = sample_pc[3].permute(0, 2, 1)
-        if feat is not None:
-            print("I am getting feat, kill me")
-            print("Feat", feat.shape)
-
+        
         feat1 = self.pointnet1((pc1, None))[1].permute(0, 2, 1)
         feat2 = self.pointnet2((pc2, None))[1].permute(0, 2, 1)
         feat3 = self.pointnet3((pc3, None))[1].permute(0, 2, 1)
@@ -450,6 +447,7 @@ class PCNNModule(nn.Module):
             feat4 = torch.cat([feat4, one_hot], 1)
 
         return feat1, feat2, feat3, feat4
+'''
 # single scale PointNet module
 class PointNetModule(nn.Module):
     def __init__(self, Infea, mlp, dist, nsample, use_xyz=True, use_feature=True):
@@ -540,28 +538,38 @@ class PointNetFeat(nn.Module):
 
         self.pointnet4 = PointNetModule(
             input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
+        depth_multiplier = 4
+        self.xconv1 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
+        self.xconv2 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
+        self.xconv3 = XConv(1, 256, depth_multiplier=1, with_X_transformation=False)
+        self.xconv4 = XConv(1, 512, depth_multiplier=1, with_X_transformation=False)
 
     def forward(self, point_cloud, sample_pc, feat=None, one_hot_vec=None):
         pc = point_cloud
-        pc1 = sample_pc[0]
+        pc1 = sample_pc[0] # [32, 3, 280]
         pc2 = sample_pc[1]
         pc3 = sample_pc[2]
         pc4 = sample_pc[3]
 
-        feat1 = self.pointnet1(pc, feat, pc1)
+        feat1 = self.pointnet1(pc, feat, pc1) # [32, 128, 280, 32]
+        feat1 = self.xconv1(pc1, feat1)
         feat1, _ = torch.max(feat1, -1)
 
         feat2 = self.pointnet2(pc, feat, pc2)
+        feat2 = self.xconv2(pc2, feat2)
         feat2, _ = torch.max(feat2, -1)
 
         feat3 = self.pointnet3(pc, feat, pc3)
+        feat3 = self.xconv3(pc3, feat3)
         feat3, _ = torch.max(feat3, -1)
 
         feat4 = self.pointnet4(pc, feat, pc4)
+        feat4 = self.xconv4(pc4, feat4)
         feat4, _ = torch.max(feat4, -1)
 
         if one_hot_vec is not None:
             one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat1.shape[-1])
+            # print(feat1.shape, one_hot.shape)
             feat1 = torch.cat([feat1, one_hot], 1)
 
             one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat2.shape[-1])
@@ -646,8 +654,8 @@ class PointNetDet(nn.Module):
     def __init__(self, input_channel=3, num_vec=0, num_classes=2):
         super(PointNetDet, self).__init__()
 
-        # self.feat_net = PointNetFeat(input_channel, 0)
-        self.feat_net = PCNNModule()
+        self.feat_net = PointNetFeat(input_channel, 0)
+        # self.feat_net = PCNNModule()
         self.conv_net = ConvFeatNet()
 
         self.num_classes = num_classes
