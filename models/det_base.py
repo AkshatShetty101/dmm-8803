@@ -206,8 +206,8 @@ class ConvFeatNet(nn.Module):
 
         self.block2_deconv = DeConv1d(128, 256, 1, 1, 0)
         self.block3_deconv = DeConv1d(256, 256, 2, 2, 0)
-        self.block4_deconv = DeConv1d(256, 256, 2, 2, 0)
-        self.block5_deconv = DeConv1d(512, 256, 4, 4, 0)
+        self.block4_deconv = DeConv1d(256, 256, 4, 4, 0)
+        self.block5_deconv = DeConv1d(512, 256, 8, 8, 0)
         # self.block6_deconv = DeConv1d(512, 256, 4, 4, 0)        
 
 
@@ -261,6 +261,12 @@ class ConvFeatNet(nn.Module):
         xx3 = self.block4_deconv(xx3)
         xx4 = self.block5_deconv(xx4)
         # xx5 = self.block6_deconv(xx5)
+
+        # print(xx1.size())
+        # print(xx2.size())
+        # print(xx3.size())
+        # print(xx4.size())
+        # print("\n\n")
 
         x = torch.cat([xx1, xx2[:, :, :xx1.shape[-1]], xx3[:, :, :xx1.shape[-1]], xx4[:, :, :xx1.shape[-1]]], 1)
 

@@ -236,7 +236,7 @@ class ProviderDataset(Dataset):
             l, w, h = self.size_list[index]
             dist = np.sqrt(np.sum(l ** 2 + w ** 2))
             shift = np.clip(np.random.randn() * dist * 0.2, -0.5 * dist, 0.5 * dist)
-            shift = np.clip(shift + box3d_center[2], 0, 80) - box3d_center[2]
+            shift = np.clip(shift + box3d_center[2], 0, 70) - box3d_center[2]
             point_set[:, 2] += shift
             box3d_center[2] += shift
 
@@ -291,11 +291,11 @@ class ProviderDataset(Dataset):
 
         s1, s2, s3, s4, s5 = cfg.DATA.STRIDE
 
-        z1 = np.arange(0, 80, s1) + s1 / 2.
-        z2 = np.arange(0, 80, s2) + s2 / 2.
-        z3 = np.arange(0, 80, s3) + s3 / 2.
-        z4 = np.arange(0, 80, s4) + s4 / 2.
-        z5 = np.arange(0, 80, s5) + s5 / 2.
+        z1 = np.arange(0, 70, s1) + s1 / 2.
+        z2 = np.arange(0, 70, s2) + s2 / 2.
+        z3 = np.arange(0, 70, s3) + s3 / 2.
+        z4 = np.arange(0, 70, s4) + s4 / 2.
+        z5 = np.arange(0, 70, s5) + s5 / 2.
         # z6 = np.arange(0, 70, s6) + s6 / 2.
 
         cx, cy = (box[0] + box[2]) / 2., (box[1] + box[3]) / 2.,

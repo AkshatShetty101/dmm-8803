@@ -47,7 +47,7 @@ def check_box_frustum(box, P, center, dimension, angle):
     x1, y1, x2, y2 = box
     box_corner = compute_box_3d(center, dimension, angle, P)  # 8, 3
 
-    z1 = np.arange(0, 80, 0.1)
+    z1 = np.arange(0, 70, 0.1)
 
     xyz1 = np.zeros((len(z1), 3))
     xyz1[:, 0] = x1
