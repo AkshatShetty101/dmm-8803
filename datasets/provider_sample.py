@@ -165,7 +165,7 @@ class ProviderDataset(Dataset):
         box = self.box2d_list[index]
         P = self.calib_list[index]['P2'].reshape(3, 4)
 
-        ref1, ref2, ref3, ref4, ref5, ref6 = self.generate_ref(box, P)
+        ref1, ref2, ref3, ref4, ref5 = self.generate_ref(box, P)
 
         if rotate_to_center:
             ref1 = self.get_center_view(ref1, index)
@@ -173,7 +173,7 @@ class ProviderDataset(Dataset):
             ref3 = self.get_center_view(ref3, index)
             ref4 = self.get_center_view(ref4, index)
             ref5 = self.get_center_view(ref5, index)
-            ref6 = self.get_center_view(ref6, index)
+            # ref6 = self.get_center_view(ref6, index)
 
         if self.from_rgb_detection:
 
@@ -186,7 +186,7 @@ class ProviderDataset(Dataset):
                 'center_ref3': torch.FloatTensor(ref3).transpose(1, 0),
                 'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
                 'center_ref5': torch.FloatTensor(ref5).transpose(1, 0),
-                'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
+                # 'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
 
             }
 
@@ -250,7 +250,7 @@ class ProviderDataset(Dataset):
             'center_ref3': torch.FloatTensor(ref3).transpose(1, 0),
             'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
             'center_ref5': torch.FloatTensor(ref5).transpose(1, 0),
-            'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
+            # 'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
 
             'label': torch.LongTensor(labels),
             'box3d_center': torch.FloatTensor(box3d_center),
@@ -289,14 +289,14 @@ class ProviderDataset(Dataset):
 
     def generate_ref(self, box, P):
 
-        s1, s2, s3, s4, s5, s6 = cfg.DATA.STRIDE
+        s1, s2, s3, s4, s5 = cfg.DATA.STRIDE
 
         z1 = np.arange(0, 70, s1) + s1 / 2.
         z2 = np.arange(0, 70, s2) + s2 / 2.
         z3 = np.arange(0, 70, s3) + s3 / 2.
         z4 = np.arange(0, 70, s4) + s4 / 2.
         z5 = np.arange(0, 70, s5) + s5 / 2.
-        z6 = np.arange(0, 70, s6) + s6 / 2.
+        # z6 = np.arange(0, 70, s6) + s6 / 2.
 
         cx, cy = (box[0] + box[2]) / 2., (box[1] + box[3]) / 2.,
 
@@ -330,13 +330,13 @@ class ProviderDataset(Dataset):
         xyz5[:, 2] = z5
         xyz5_rect = project_image_to_rect(xyz5, P)
 
-        xyz6 = np.zeros((len(z6), 3))
-        xyz6[:, 0] = cx
-        xyz6[:, 1] = cy
-        xyz6[:, 2] = z6
-        xyz6_rect = project_image_to_rect(xyz6, P)
+        # xyz6 = np.zeros((len(z6), 3))
+        # xyz6[:, 0] = cx
+        # xyz6[:, 1] = cy
+        # xyz6[:, 2] = z6
+        # xyz6_rect = project_image_to_rect(xyz6, P)
 
-        return xyz1_rect, xyz2_rect, xyz3_rect, xyz4_rect, xyz5_rect, xyz6_rect
+        return xyz1_rect, xyz2_rect, xyz3_rect, xyz4_rect, xyz5_rect
 
     def get_center_view_rot_angle(self, index):
         ''' Get the frustum rotation angle, it isshifted by pi/2 so that it
