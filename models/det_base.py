@@ -560,7 +560,7 @@ class PointNetFeat(nn.Module):
         feat2, _ = torch.max(feat2, -1)
 
         feat3 = self.pointnet3(pc, feat, pc3)
-        # feat3 = self.xconv3(pc3, feat3)
+        feat3 = self.xconv3(pc3, feat3)
         feat3, _ = torch.max(feat3, -1)
 
         feat4 = self.pointnet4(pc, feat, pc4)
