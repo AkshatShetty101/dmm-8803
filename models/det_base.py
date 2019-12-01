@@ -115,13 +115,13 @@ class PointNetFeat(nn.Module):
             input_channel - 3, [64, 64, 128], u[0], 32, use_xyz=True, use_feature=True)
 
         self.pointnet2 = PointNetModule(
-            input_channel - 3, [64, 64, 128], u[1], 32, use_xyz=True, use_feature=True)
+            input_channel - 3, [64, 64, 128], u[1], 64, use_xyz=True, use_feature=True)
 
         self.pointnet3 = PointNetModule(
             input_channel - 3, [128, 128, 256], u[2], 64, use_xyz=True, use_feature=True)
 
         self.pointnet4 = PointNetModule(
-            input_channel - 3, [128, 128, 256], u[3], 64, use_xyz=True, use_feature=True)
+            input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
         
         # self.pointnet5 = PointNetModule(
         #     input_channel - 3, [256, 256, 512], u[4], 128, use_xyz=True, use_feature=True)
