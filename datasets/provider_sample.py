@@ -230,7 +230,7 @@ class ProviderDataset(Dataset):
                 ref3[:, 0] *= -1
                 ref4[:, 0] *= -1
                 ref5[:, 0] *= -1
-                ref6[:, 0] *= -1
+                # ref6[:, 0] *= -1
 
         if self.random_shift:
             l, w, h = self.size_list[index]
