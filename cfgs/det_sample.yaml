@@ -30,7 +30,7 @@ DATA:
 
 RESUME: False
 NUM_GPUS: 1
-OUTPUT_DIR: 'output-1/car_train'
+OUTPUT_DIR: 'output-2/car_train'
 SAVE_SUB_DIR: 'val_nms'
 USE_TFBOARD: False
 NUM_WORKERS: 4
