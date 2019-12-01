@@ -556,15 +556,15 @@ class PointNetFeat(nn.Module):
         feat1, _ = torch.max(feat1, -1)
 
         feat2 = self.pointnet2(pc, feat, pc2)
-        feat2 = self.xconv2(pc2, feat2)
+        # feat2 = self.xconv2(pc2, feat2)
         feat2, _ = torch.max(feat2, -1)
 
         feat3 = self.pointnet3(pc, feat, pc3)
-        feat3 = self.xconv3(pc3, feat3)
+        # feat3 = self.xconv3(pc3, feat3)
         feat3, _ = torch.max(feat3, -1)
 
         feat4 = self.pointnet4(pc, feat, pc4)
-        feat4 = self.xconv4(pc4, feat4)
+        # feat4 = self.xconv4(pc4, feat4)
         feat4, _ = torch.max(feat4, -1)
 
         if one_hot_vec is not None:
