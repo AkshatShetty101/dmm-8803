@@ -222,7 +222,7 @@ class ConvFeatNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def forward(self, x1, x2, x3, x4, x5):
+    def forward(self, x1, x2, x3, x4):
 
         x = self.block1_conv1(x1)
 
