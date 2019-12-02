@@ -526,23 +526,27 @@ class PointNetFeat(nn.Module):
 
         self.num_vec = num_vec
         u = cfg.DATA.HEIGHT_HALF
-        assert len(u) == 4
+        # assert len(u) == 4
         self.pointnet1 = PointNetModule(
             input_channel - 3, [64, 64, 128], u[0], 32, use_xyz=True, use_feature=True)
 
         self.pointnet2 = PointNetModule(
-            input_channel - 3, [64, 64, 128], u[1], 64, use_xyz=True, use_feature=True)
+            input_channel - 3, [64, 64, 128], u[1], 32, use_xyz=True, use_feature=True)
 
         self.pointnet3 = PointNetModule(
             input_channel - 3, [128, 128, 256], u[2], 64, use_xyz=True, use_feature=True)
 
         self.pointnet4 = PointNetModule(
             input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
-        depth_multiplier = 4
+
         self.xconv1 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv2 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv3 = XConv(1, 256, depth_multiplier=1, with_X_transformation=False)
         self.xconv4 = XConv(1, 512, depth_multiplier=1, with_X_transformation=False)
+        self.xconv5 = XConv(1, 512, depth_multiplier=1, with_X_transformation=False)
+
+        # self.pointnet6 = PointNetModule(
+        #     input_channel - 3, [256, 256, 512], u[5], 128, use_xyz=True, use_feature=True)
 
     def forward(self, point_cloud, sample_pc, feat=None, one_hot_vec=None):
         pc = point_cloud
@@ -550,6 +554,8 @@ class PointNetFeat(nn.Module):
         pc2 = sample_pc[1]
         pc3 = sample_pc[2]
         pc4 = sample_pc[3]
+        pc5 = sample_pc[4]
+        # pc6 = sample_pc[5]
 
         feat1 = self.pointnet1(pc, feat, pc1) # [32, 128, 280, 32]
         feat1 = self.xconv1(pc1, feat1)
@@ -567,6 +573,13 @@ class PointNetFeat(nn.Module):
         # feat4 = self.xconv4(pc4, feat4)
         feat4, _ = torch.max(feat4, -1)
 
+        feat5 = self.pointnet5(pc, feat, pc5)
+        # feat5 = self.xconv5(pc5, feat5)
+        feat5, _ = torch.max(feat5, -1)
+
+        # feat6 = self.pointnet6(pc, feat, pc6)
+        # feat6, _ = torch.max(feat6, -1)
+
         if one_hot_vec is not None:
             one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat1.shape[-1])
             # print(feat1.shape, one_hot.shape)
@@ -581,8 +594,13 @@ class PointNetFeat(nn.Module):
             one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat4.shape[-1])
             feat4 = torch.cat([feat4, one_hot], 1)
 
-        return feat1, feat2, feat3, feat4
+            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat5.shape[-1])
+            feat5 = torch.cat([feat5, one_hot], 1)
 
+            # one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat6.shape[-1])
+            # feat6 = torch.cat([feat6, one_hot], 1)
+
+        return feat1, feat2, feat3, feat4, feat5
 
 # FCN
 class ConvFeatNet(nn.Module):
@@ -599,13 +617,24 @@ class ConvFeatNet(nn.Module):
         self.block3_conv2 = Conv1d(256, 256, 3, 1, 1)
         self.block3_merge = Conv1d(256 + 256 + num_vec, 256, 1, 1)
 
-        self.block4_conv1 = Conv1d(256, 512, 3, 2, 1)
-        self.block4_conv2 = Conv1d(512, 512, 3, 1, 1)
-        self.block4_merge = Conv1d(512 + 512 + num_vec, 512, 1, 1)
+        self.block4_conv1 = Conv1d(256, 256, 3, 2, 1)
+        self.block4_conv2 = Conv1d(256, 256, 3, 1, 1)
+        self.block4_merge = Conv1d(256 + 256 + num_vec, 256, 1, 1)
+
+        self.block5_conv1 = Conv1d(256, 512, 3, 2, 1)
+        self.block5_conv2 = Conv1d(512, 512, 3, 1, 1)
+        self.block5_merge = Conv1d(512 + 512 + num_vec, 512, 1, 1)
+
+        # self.block6_conv1 = Conv1d(512, 512, 3, 2, 1)
+        # self.block6_conv2 = Conv1d(512, 512, 3, 1, 1)
+        # self.block6_merge = Conv1d(512 + 512 + num_vec, 512, 1, 1)
 
         self.block2_deconv = DeConv1d(128, 256, 1, 1, 0)
         self.block3_deconv = DeConv1d(256, 256, 2, 2, 0)
-        self.block4_deconv = DeConv1d(512, 256, 4, 4, 0)
+        self.block4_deconv = DeConv1d(256, 256, 4, 4, 0)
+        self.block5_deconv = DeConv1d(512, 256, 8, 8, 0)
+        # self.block6_deconv = DeConv1d(512, 256, 4, 4, 0)        
+
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.ConvTranspose1d)):
@@ -618,7 +647,7 @@ class ConvFeatNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def forward(self, x1, x2, x3, x4):
+    def forward(self, x1, x2, x3, x4, x5):
 
         x = self.block1_conv1(x1)
 
@@ -640,11 +669,31 @@ class ConvFeatNet(nn.Module):
         x = self.block4_merge(x)
         xx3 = x
 
+        x = self.block5_conv1(x)
+        x = self.block5_conv2(x)
+        x = torch.cat([x, x5], 1)
+        x = self.block5_merge(x)
+        xx4 = x
+
+        # x = self.block6_conv1(x)
+        # x = self.block6_conv2(x)
+        # x = torch.cat([x, x6], 1)
+        # x = self.block6_merge(x)
+        # xx5 = x
+
         xx1 = self.block2_deconv(xx1)
         xx2 = self.block3_deconv(xx2)
         xx3 = self.block4_deconv(xx3)
+        xx4 = self.block5_deconv(xx4)
+        # xx5 = self.block6_deconv(xx5)
 
-        x = torch.cat([xx1, xx2[:, :, :xx1.shape[-1]], xx3[:, :, :xx1.shape[-1]]], 1)
+        # print(xx1.size())
+        # print(xx2.size())
+        # print(xx3.size())
+        # print(xx4.size())
+        # print("\n\n")
+
+        x = torch.cat([xx1, xx2[:, :, :xx1.shape[-1]], xx3[:, :, :xx1.shape[-1]], xx4[:, :, :xx1.shape[-1]]], 1)
 
         return x
 
@@ -665,8 +714,8 @@ class PointNetDet(nn.Module):
 
         output_size = 3 + num_bins * 2 + NUM_SIZE_CLUSTER * 4
 
-        self.reg_out = nn.Conv1d(768, output_size, 1)
-        self.cls_out = nn.Conv1d(768, 2, 1)
+        self.reg_out = nn.Conv1d(1024, output_size, 1)
+        self.cls_out = nn.Conv1d(1024, 2, 1)
         self.relu = nn.ReLU(True)
 
         nn.init.kaiming_uniform_(self.cls_out.weight, mode='fan_in')
@@ -762,6 +811,8 @@ class PointNetDet(nn.Module):
         center_ref2 = data_dicts.get('center_ref2')
         center_ref3 = data_dicts.get('center_ref3')
         center_ref4 = data_dicts.get('center_ref4')
+        center_ref5 = data_dicts.get('center_ref5')
+        # center_ref6 = data_dicts.get('center_ref6')
 
         batch_size = point_cloud.shape[0]
 
@@ -800,14 +851,14 @@ class PointNetDet(nn.Module):
         # torch.set_printoptions(profile="default")
         
         # print(center_ref1.shape, center_ref2.shape, center_ref3.shape)
-        feat1, feat2, feat3, feat4 = self.feat_net(
+        feat1, feat2, feat3, feat4, feat5 = self.feat_net(
             object_point_cloud_xyz,
-            [center_ref1, center_ref2, center_ref3, center_ref4],
+            [center_ref1, center_ref2, center_ref3, center_ref4, center_ref5],
             object_point_cloud_i,
             one_hot_vec)
         # print(feat1.shape, feat2.shape, feat3.shape)
 
-        x = self.conv_net(feat1, feat2, feat3, feat4)
+        x = self.conv_net(feat1, feat2, feat3, feat4, feat5)
 
         cls_scores = self.cls_out(x)
         outputs = self.reg_out(x)
