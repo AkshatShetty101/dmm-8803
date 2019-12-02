@@ -537,7 +537,7 @@ class PointNetFeat(nn.Module):
             input_channel - 3, [128, 128, 256], u[2], 64, use_xyz=True, use_feature=True)
 
         self.pointnet4 = PointNetModule(
-            input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
+            input_channel - 3, [128, 128, 256], u[3], 64, use_xyz=True, use_feature=True)
 
         self.pointnet5 = PointNetModule(
             input_channel - 3, [256, 256, 512], u[4], 128, use_xyz=True, use_feature=True)
@@ -545,7 +545,7 @@ class PointNetFeat(nn.Module):
         self.xconv1 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv2 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv3 = XConv(1, 256, depth_multiplier=1, with_X_transformation=False)
-        self.xconv4 = XConv(1, 512, depth_multiplier=1, with_X_transformation=False)
+        self.xconv4 = XConv(1, 256, depth_multiplier=1, with_X_transformation=False)
         self.xconv5 = XConv(1, 512, depth_multiplier=1, with_X_transformation=False)
 
         # self.pointnet6 = PointNetModule(
