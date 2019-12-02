@@ -538,6 +538,10 @@ class PointNetFeat(nn.Module):
 
         self.pointnet4 = PointNetModule(
             input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
+
+        self.pointnet5 = PointNetModule(
+            input_channel - 3, [256, 256, 512], u[4], 128, use_xyz=True, use_feature=True)
+
         self.xconv1 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv2 = XConv(1, 128, depth_multiplier=1, with_X_transformation=False)
         self.xconv3 = XConv(1, 256, depth_multiplier=1, with_X_transformation=False)
@@ -573,7 +577,7 @@ class PointNetFeat(nn.Module):
         feat4, _ = torch.max(feat4, -1)
 
         feat5 = self.pointnet5(pc, feat, pc5)
-        feat5= self.xconv5(pc5, feat5)
+        feat5 = self.xconv5(pc5, feat5)
         feat5, _ = torch.max(feat5, -1)
 
         # feat6 = self.pointnet6(pc, feat, pc6)
