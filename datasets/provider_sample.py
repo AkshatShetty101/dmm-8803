@@ -165,13 +165,13 @@ class ProviderDataset(Dataset):
         box = self.box2d_list[index]
         P = self.calib_list[index]['P2'].reshape(3, 4)
 
-        ref1, ref2, ref3, ref4 = self.generate_ref(box, P)
+        ref1, ref2, ref3 = self.generate_ref(box, P)
 
         if rotate_to_center:
             ref1 = self.get_center_view(ref1, index)
             ref2 = self.get_center_view(ref2, index)
             ref3 = self.get_center_view(ref3, index)
-            ref4 = self.get_center_view(ref4, index)
+            # ref4 = self.get_center_view(ref4, index)
             # ref5 = self.get_center_view(ref5, index)
             # ref6 = self.get_center_view(ref6, index)
 
@@ -184,7 +184,7 @@ class ProviderDataset(Dataset):
                 'center_ref1': torch.FloatTensor(ref1).transpose(1, 0),
                 'center_ref2': torch.FloatTensor(ref2).transpose(1, 0),
                 'center_ref3': torch.FloatTensor(ref3).transpose(1, 0),
-                'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
+                # 'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
                 # 'center_ref5': torch.FloatTensor(ref5).transpose(1, 0),
                 # 'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
 
@@ -228,7 +228,7 @@ class ProviderDataset(Dataset):
                 ref1[:, 0] *= -1
                 ref2[:, 0] *= -1
                 ref3[:, 0] *= -1
-                ref4[:, 0] *= -1
+                # ref4[:, 0] *= -1
                 # ref5[:, 0] *= -1
                 # ref6[:, 0] *= -1
 
@@ -236,7 +236,7 @@ class ProviderDataset(Dataset):
             l, w, h = self.size_list[index]
             dist = np.sqrt(np.sum(l ** 2 + w ** 2))
             shift = np.clip(np.random.randn() * dist * 0.2, -0.5 * dist, 0.5 * dist)
-            shift = np.clip(shift + box3d_center[2], 0, 70) - box3d_center[2]
+            shift = np.clip(shift + box3d_center[2], 0, 80) - box3d_center[2]
             point_set[:, 2] += shift
             box3d_center[2] += shift
 
@@ -248,7 +248,7 @@ class ProviderDataset(Dataset):
             'center_ref1': torch.FloatTensor(ref1).transpose(1, 0),
             'center_ref2': torch.FloatTensor(ref2).transpose(1, 0),
             'center_ref3': torch.FloatTensor(ref3).transpose(1, 0),
-            'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
+            # 'center_ref4': torch.FloatTensor(ref4).transpose(1, 0),
             # 'center_ref5': torch.FloatTensor(ref5).transpose(1, 0),
             # 'center_ref6': torch.FloatTensor(ref6).transpose(1, 0),
 
@@ -289,12 +289,12 @@ class ProviderDataset(Dataset):
 
     def generate_ref(self, box, P):
 
-        s1, s2, s3, s4 = cfg.DATA.STRIDE
+        s1, s2, s3 = cfg.DATA.STRIDE
 
-        z1 = np.arange(0, 70, s1) + s1 / 2.
-        z2 = np.arange(0, 70, s2) + s2 / 2.
-        z3 = np.arange(0, 70, s3) + s3 / 2.
-        z4 = np.arange(0, 70, s4) + s4 / 2.
+        z1 = np.arange(0, 80, s1) + s1 / 2.
+        z2 = np.arange(0, 80, s2) + s2 / 2.
+        z3 = np.arange(0, 80, s3) + s3 / 2.
+        # z4 = np.arange(0, 70, s4) + s4 / 2.
         # z5 = np.arange(0, 70, s5) + s5 / 2.
         # z6 = np.arange(0, 70, s6) + s6 / 2.
 
@@ -318,11 +318,11 @@ class ProviderDataset(Dataset):
         xyz3[:, 2] = z3
         xyz3_rect = project_image_to_rect(xyz3, P)
 
-        xyz4 = np.zeros((len(z4), 3))
-        xyz4[:, 0] = cx
-        xyz4[:, 1] = cy
-        xyz4[:, 2] = z4
-        xyz4_rect = project_image_to_rect(xyz4, P)
+        # xyz4 = np.zeros((len(z4), 3))
+        # xyz4[:, 0] = cx
+        # xyz4[:, 1] = cy
+        # xyz4[:, 2] = z4
+        # xyz4_rect = project_image_to_rect(xyz4, P)
 
         # xyz5 = np.zeros((len(z5), 3))
         # xyz5[:, 0] = cx
@@ -336,7 +336,7 @@ class ProviderDataset(Dataset):
         # xyz6[:, 2] = z6
         # xyz6_rect = project_image_to_rect(xyz6, P)
 
-        return xyz1_rect, xyz2_rect, xyz3_rect, xyz4_rect
+        return xyz1_rect, xyz2_rect, xyz3_rect
 
     def get_center_view_rot_angle(self, index):
         ''' Get the frustum rotation angle, it isshifted by pi/2 so that it

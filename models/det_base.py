@@ -120,8 +120,8 @@ class PointNetFeat(nn.Module):
         self.pointnet3 = PointNetModule(
             input_channel - 3, [128, 128, 256], u[2], 64, use_xyz=True, use_feature=True)
 
-        self.pointnet4 = PointNetModule(
-            input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
+        # self.pointnet4 = PointNetModule(
+        #     input_channel - 3, [256, 256, 512], u[3], 128, use_xyz=True, use_feature=True)
         
         # self.pointnet5 = PointNetModule(
         #     input_channel - 3, [256, 256, 512], u[4], 128, use_xyz=True, use_feature=True)
@@ -134,7 +134,7 @@ class PointNetFeat(nn.Module):
         pc1 = sample_pc[0]
         pc2 = sample_pc[1]
         pc3 = sample_pc[2]
-        pc4 = sample_pc[3]
+        # pc4 = sample_pc[3]
         # pc5 = sample_pc[4]
         # pc6 = sample_pc[5]
 
@@ -147,8 +147,8 @@ class PointNetFeat(nn.Module):
         feat3 = self.pointnet3(pc, feat, pc3)
         feat3, _ = torch.max(feat3, -1)
 
-        feat4 = self.pointnet4(pc, feat, pc4)
-        feat4, _ = torch.max(feat4, -1)
+        # feat4 = self.pointnet4(pc, feat, pc4)
+        # feat4, _ = torch.max(feat4, -1)
 
         # feat5 = self.pointnet5(pc, feat, pc5)
         # feat5, _ = torch.max(feat5, -1)
@@ -166,8 +166,8 @@ class PointNetFeat(nn.Module):
             one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat3.shape[-1])
             feat3 = torch.cat([feat3, one_hot], 1)
 
-            one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat4.shape[-1])
-            feat4 = torch.cat([feat4, one_hot], 1)
+            # one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat4.shape[-1])
+            # feat4 = torch.cat([feat4, one_hot], 1)
 
             # one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat5.shape[-1])
             # feat5 = torch.cat([feat5, one_hot], 1)
@@ -175,7 +175,7 @@ class PointNetFeat(nn.Module):
             # one_hot = one_hot_vec.unsqueeze(-1).expand(-1, -1, feat6.shape[-1])
             # feat6 = torch.cat([feat6, one_hot], 1)
 
-        return feat1, feat2, feat3, feat4
+        return feat1, feat2, feat3
 
 # FCN
 class ConvFeatNet(nn.Module):
@@ -192,9 +192,9 @@ class ConvFeatNet(nn.Module):
         self.block3_conv2 = Conv1d(256, 256, 3, 1, 1)
         self.block3_merge = Conv1d(256 + 256 + num_vec, 256, 1, 1)
 
-        self.block4_conv1 = Conv1d(256, 512, 3, 2, 1)
-        self.block4_conv2 = Conv1d(512, 512, 3, 1, 1)
-        self.block4_merge = Conv1d(512 + 512 + num_vec, 512, 1, 1)
+        # self.block4_conv1 = Conv1d(256, 512, 3, 2, 1)
+        # self.block4_conv2 = Conv1d(512, 512, 3, 1, 1)
+        # self.block4_merge = Conv1d(512 + 512 + num_vec, 512, 1, 1)
 
         # self.block5_conv1 = Conv1d(256, 512, 3, 2, 1)
         # self.block5_conv2 = Conv1d(512, 512, 3, 1, 1)
@@ -206,7 +206,7 @@ class ConvFeatNet(nn.Module):
 
         self.block2_deconv = DeConv1d(128, 256, 1, 1, 0)
         self.block3_deconv = DeConv1d(256, 256, 2, 2, 0)
-        self.block4_deconv = DeConv1d(512, 256, 4, 4, 0)
+        # self.block4_deconv = DeConv1d(512, 256, 4, 4, 0)
         # self.block5_deconv = DeConv1d(512, 256, 8, 8, 0)
         # self.block6_deconv = DeConv1d(512, 256, 4, 4, 0)        
 
@@ -222,7 +222,7 @@ class ConvFeatNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def forward(self, x1, x2, x3, x4):
+    def forward(self, x1, x2, x3):
 
         x = self.block1_conv1(x1)
 
@@ -238,11 +238,11 @@ class ConvFeatNet(nn.Module):
         x = self.block3_merge(x)
         xx2 = x
 
-        x = self.block4_conv1(x)
-        x = self.block4_conv2(x)
-        x = torch.cat([x, x4], 1)
-        x = self.block4_merge(x)
-        xx3 = x
+        # x = self.block4_conv1(x)
+        # x = self.block4_conv2(x)
+        # x = torch.cat([x, x4], 1)
+        # x = self.block4_merge(x)
+        # xx3 = x
 
         # x = self.block5_conv1(x)
         # x = self.block5_conv2(x)
@@ -258,7 +258,7 @@ class ConvFeatNet(nn.Module):
 
         xx1 = self.block2_deconv(xx1)
         xx2 = self.block3_deconv(xx2)
-        xx3 = self.block4_deconv(xx3)
+        # xx3 = self.block4_deconv(xx3)
         # xx4 = self.block5_deconv(xx4)
         # xx5 = self.block6_deconv(xx5)
 
@@ -268,7 +268,7 @@ class ConvFeatNet(nn.Module):
         # print(xx4.size())
         # print("\n\n")
 
-        x = torch.cat([xx1, xx2[:, :, :xx1.shape[-1]], xx3[:, :, :xx1.shape[-1]]], 1)
+        x = torch.cat([xx1, xx2[:, :, :xx1.shape[-1]]], 1)
 
         return x
 
@@ -384,7 +384,7 @@ class PointNetDet(nn.Module):
         center_ref1 = data_dicts.get('center_ref1')
         center_ref2 = data_dicts.get('center_ref2')
         center_ref3 = data_dicts.get('center_ref3')
-        center_ref4 = data_dicts.get('center_ref4')
+        # center_ref4 = data_dicts.get('center_ref4')
         # center_ref5 = data_dicts.get('center_ref5')
         # center_ref6 = data_dicts.get('center_ref6')
 
@@ -398,13 +398,13 @@ class PointNetDet(nn.Module):
 
         mean_size_array = torch.from_numpy(MEAN_SIZE_ARRAY).type_as(point_cloud)
 
-        feat1, feat2, feat3, feat4 = self.feat_net(
+        feat1, feat2, feat3 = self.feat_net(
             object_point_cloud_xyz,
-            [center_ref1, center_ref2, center_ref3, center_ref4],
+            [center_ref1, center_ref2, center_ref3],
             object_point_cloud_i,
             one_hot_vec)
 
-        x = self.conv_net(feat1, feat2, feat3, feat4)
+        x = self.conv_net(feat1, feat2, feat3)
 
         cls_scores = self.cls_out(x)
         outputs = self.reg_out(x)
