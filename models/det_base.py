@@ -288,8 +288,8 @@ class PointNetDet(nn.Module):
 
         output_size = 3 + num_bins * 2 + NUM_SIZE_CLUSTER * 4
 
-        self.reg_out = nn.Conv1d(768, output_size, 1)
-        self.cls_out = nn.Conv1d(768, 2, 1)
+        self.reg_out = nn.Conv1d(512, output_size, 1)
+        self.cls_out = nn.Conv1d(512, 2, 1)
         self.relu = nn.ReLU(True)
 
         nn.init.kaiming_uniform_(self.cls_out.weight, mode='fan_in')
